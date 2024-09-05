@@ -7,7 +7,7 @@ This application allows users to record audio responses to a series of questions
 1. Clone the repository:
    ```
    git clone https://github.com/makecontact/Question-Based-Repo-for-LLMs.git
-   cd audio-transcription-app
+   cd Question-Based-Repo-for-LLMs
    ```
 
 2. Install dependencies:
