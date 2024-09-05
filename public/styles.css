@@ -1,0 +1,15 @@
+body {
+    font-family: Arial, sans-serif;
+  }
+  
+  #audioContainer audio {
+    width: 100%;
+  }
+  
+  #transcriptionContainer {
+    white-space: pre-wrap;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+  }
