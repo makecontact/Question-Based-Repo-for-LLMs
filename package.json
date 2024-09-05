@@ -15,6 +15,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "groq-sdk": "^0.7.0",
+    "jsoneditor": "^10.1.0",
     "multer": "^1.4.5-lts.1",
     "util": "^0.12.5"
   }

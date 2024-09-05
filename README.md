@@ -80,6 +80,16 @@ This application allows users to record audio responses to a series of questions
 - `audio_files/`: Directory for storing audio recordings
 - `transcriptions/`: Directory for storing transcriptions
 
+## Features
+
+- Record audio responses to predefined questions
+- Automatic transcription and cleaning of audio responses
+- Compile all transcriptions into a single document
+- Built-in Questions Editor for managing the question set
+  - Access the Questions Editor by clicking "Questions Editor" in the top navigation menu
+  - Add, remove, or modify topics and questions
+  - Changes are saved directly to the questions.json file
+
 ## Dependencies
 
 - Express

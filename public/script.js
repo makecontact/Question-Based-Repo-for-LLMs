@@ -78,9 +78,18 @@ async function loadFirstUnansweredQuestion() {
     await loadQuestion(id);
   } catch (error) {
     console.error('Error loading first unanswered question:', error);
-    questionText.textContent = 'Error loading question';
+    questionText.textContent = 'No questions available. Please add questions in the Questions Editor.';
     topicText.textContent = '';
+    disableRecordingControls();
   }
+}
+
+function disableRecordingControls() {
+  recordBtn.disabled = true;
+  stopBtn.disabled = true;
+  deleteBtn.disabled = true;
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
 }
 
 async function loadQuestion(id) {

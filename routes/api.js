@@ -26,7 +26,19 @@ router.get('/questions', async (req, res) => {
     const questions = await Question.getAll();
     res.json(questions);
   } catch (error) {
+    console.error('Error fetching questions:', error);
     res.status(500).json({ error: 'Failed to fetch questions' });
+  }
+});
+
+// Update questions
+router.post('/questions', async (req, res) => {
+  try {
+    await Question.saveAll(req.body);
+    res.json({ message: 'Questions updated successfully' });
+  } catch (error) {
+    console.error('Error updating questions:', error);
+    res.status(500).json({ error: 'Failed to update questions' });
   }
 });
 
@@ -121,7 +133,7 @@ router.get('/first-unanswered', async (req, res) => {
     res.json({ id: firstUnansweredId });
   } catch (error) {
     console.error('Error finding first unanswered question:', error);
-    res.status(500).json({ error: 'Failed to find first unanswered question' });
+    res.status(500).json({ error: 'Failed to find first unanswered question', id: 1 });
   }
 });
 

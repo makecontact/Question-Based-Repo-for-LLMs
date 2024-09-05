@@ -3,31 +3,67 @@ const path = require('path');
 
 const questionsFilePath = path.join(__dirname, '..', 'questions.json');
 
+const defaultQuestions = {
+  topics: [
+    {
+      topic: "Sample Topic",
+      questions: [
+        "Sample Question 1",
+        "Sample Question 2"
+      ]
+    }
+  ]
+};
+
 class Question {
+
   static async getAll() {
-    const data = await fs.readFile(questionsFilePath, 'utf-8');
-    return JSON.parse(data).topics;
+    try {
+      const data = await fs.readFile(questionsFilePath, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        console.log('questions.json not found. Creating with default structure.');
+        await this.saveAll(defaultQuestions);
+        return defaultQuestions;
+      } else {
+        console.error('Error reading questions file:', error);
+        throw error;
+      }
+    }
+  }
+
+  static async saveAll(questions) {
+    try {
+      await fs.writeFile(questionsFilePath, JSON.stringify(questions, null, 2));
+    } catch (error) {
+      console.error('Error writing questions file:', error);
+      throw error;
+    }
   }
 
   static async getFirstUnansweredId() {
-    const data = await fs.readFile(questionsFilePath, 'utf-8');
-    const topics = JSON.parse(data).topics;
-    
-    let questionIndex = 0;
-    for (const topic of topics) {
-      for (const question of topic.questions) {
-        questionIndex++;
-        const audioPath = path.join(__dirname, '..', 'audio_files', `${questionIndex}.m4a`);
-        try {
-          await fs.access(audioPath, fs.constants.F_OK);
-        } catch (error) {
-          // File doesn't exist, this is the first unanswered question
-          return questionIndex;
+    try {
+      const questions = await this.getAll(); // This will create the file if it doesn't exist
+      let questionIndex = 0;
+      for (const topic of questions.topics) {
+        for (const question of topic.questions) {
+          questionIndex++;
+          const audioPath = path.join(__dirname, '..', 'audio_files', `${questionIndex}.m4a`);
+          try {
+            await fs.access(audioPath, fs.constants.F_OK);
+          } catch (error) {
+            // File doesn't exist, this is the first unanswered question
+            return questionIndex;
+          }
         }
       }
+      // If all questions are answered, return the last question's ID
+      return questionIndex || 1; // Return 1 if there are no questions
+    } catch (error) {
+      console.error('Error finding first unanswered question:', error);
+      return 1; // Return 1 as a default if there's an error
     }
-    // If all questions are answered, return the last question's ID
-    return questionIndex;
   }
 
   static async getById(id) {
