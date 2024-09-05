@@ -1,54 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Question Repo Builder</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question-Based Repo for LLMs</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-icon i {
+            margin-right: 5px;
+        }
+    </style>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/">Question-Based Repo for LLMs</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link active" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/questions-editor">Questions Editor</a>
-                </li>
-            </ul>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">QRB</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Answer</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/questions-editor">Edit Questions</a>
+                    </li>
+                </ul>
+                <button id="downloadAllBtn" class="btn btn-outline-success btn-icon">
+                    <i class="bi bi-download"></i> Download All Transcriptions
+                </button>
+            </div>
         </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div id="questionContainer" class="mb-4">
+            <h2 id="questionText" class="mb-2"></h2>
+            <p id="topicText" class="text-muted"></p>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6 offset-md-3">
+                <div class="d-flex justify-content-between">
+                    <button id="recordBtn" class="btn btn-primary btn-icon">
+                        <i class="bi bi-record-circle"></i> Record
+                    </button>
+                    <button id="stopBtn" class="btn btn-secondary btn-icon" disabled>
+                        <i class="bi bi-stop-circle"></i> Stop
+                    </button>
+                    <button id="deleteBtn" class="btn btn-danger btn-icon" disabled>
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="recordingStatus" class="text-center mb-3"></div>
+
+        <div id="audioContainer" class="mb-3 text-center"></div>
+
+        <div class="row mb-3">
+            <div class="col-md-6 offset-md-3">
+                <div class="d-flex justify-content-between">
+                    <button id="prevBtn" class="btn btn-outline-secondary btn-icon">
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button id="nextBtn" class="btn btn-outline-secondary btn-icon">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="transcriptionContainer" class="mb-3 p-3 border rounded"></div>
     </div>
-  </nav>
-  <div class="container mt-5">
-    <h1 class="mb-4">Question Repo Builder</h1>
-    <p>Build a respository of complex, nuanced information quickly using interview style questions that can be used with an LLM or chat bot.</p>
-    <div id="questionContainer" class="mb-4">
-      <h2 id="questionText"></h2>
-      <p id="topicText" class="text-muted"></p>
-    </div>
-    <div class="mb-3">
-      <button id="recordBtn" class="btn btn-primary">Record</button>
-      <button id="stopBtn" class="btn btn-danger" disabled>Stop</button>
-      <button id="deleteBtn" class="btn btn-warning" disabled>Delete Audio</button>
-    </div>
-    <div class="mb-3">
-      <button id="prevBtn" class="btn btn-secondary">Previous</button>
-      <button id="nextBtn" class="btn btn-secondary">Next</button>
-    </div>
-    <div class="mb-3">
-      <button id="downloadAllBtn" class="btn btn-success">Download All Transcriptions</button>
-    </div>
-    <div id="audioContainer" class="mb-3"></div>
-    <div id="transcriptionContainer" class="mb-3"></div>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="script.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

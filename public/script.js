@@ -13,61 +13,57 @@ const nextBtn = document.getElementById('nextBtn');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
 const audioContainer = document.getElementById('audioContainer');
 const transcriptionContainer = document.getElementById('transcriptionContainer');
-
-const recordingStatus = document.createElement('div');
-recordingStatus.className = 'mt-2 text-muted';
-recordBtn.parentNode.insertBefore(recordingStatus, recordBtn.nextSibling);
+const recordingStatus = document.getElementById('recordingStatus');
 
 async function initializeMediaRecorder() {
   if (!stream) {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   }
   mediaRecorder = new MediaRecorder(stream);
   
   mediaRecorder.addEventListener('dataavailable', event => {
-    if (event.data.size > 0) {
-      audioChunks.push(event.data);
-    }
+      if (event.data.size > 0) {
+          audioChunks.push(event.data);
+      }
   });
 
   mediaRecorder.addEventListener('start', () => {
-    recordingStatus.textContent = 'Recording...';
-    recordBtn.classList.add('btn-danger');
-    recordBtn.textContent = 'Recording...';
-    stopBtn.disabled = false;
+      recordingStatus.textContent = 'Recording...';
+      recordBtn.disabled = true;
+      stopBtn.disabled = false;
+      deleteBtn.disabled = true;
   });
 
   mediaRecorder.addEventListener('stop', async () => {
-    recordingStatus.textContent = 'Processing...';
-    recordBtn.classList.remove('btn-danger');
-    recordBtn.textContent = 'Record';
-    recordBtn.disabled = true;
-    stopBtn.disabled = true;
-
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    const formData = new FormData();
-    formData.append('audio', audioBlob, `${currentQuestionId}.wav`);
-
-    try {
-      const response = await fetch(`/api/audio/${currentQuestionId}`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      console.log('Audio uploaded successfully');
-      recordingStatus.textContent = 'Audio uploaded successfully';
-    } catch (error) {
-      console.error('Error uploading audio:', error);
-      recordingStatus.textContent = 'Error uploading audio';
-    } finally {
-      audioChunks = [];
-      updateAudioPlayer();
+      recordingStatus.textContent = 'Processing...';
       recordBtn.disabled = false;
-    }
+      stopBtn.disabled = true;
+      deleteBtn.disabled = true;
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const formData = new FormData();
+      formData.append('audio', audioBlob, `${currentQuestionId}.wav`);
+
+      try {
+          const response = await fetch(`/api/audio/${currentQuestionId}`, {
+              method: 'POST',
+              body: formData
+          });
+
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          console.log('Audio uploaded successfully');
+          recordingStatus.textContent = 'Audio uploaded and processed successfully';
+      } catch (error) {
+          console.error('Error uploading audio:', error);
+          recordingStatus.textContent = 'Error uploading audio';
+      } finally {
+          audioChunks = [];
+          await updateAudioPlayer();
+          recordBtn.disabled = false;
+      }
   });
 }
 
