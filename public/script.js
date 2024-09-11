@@ -233,9 +233,50 @@ downloadAllBtn.addEventListener('click', async () => {
   }
 });
 
+async function updateProgressBar() {
+  const totalQuestions = await getTotalQuestions();
+  const completedQuestions = await getCompletedQuestions();
+  const remainingQuestions = totalQuestions - completedQuestions;
+  const progressPercentage = totalQuestions > 0 ? Math.round((completedQuestions / totalQuestions) * 100) : 0;
+  
+  const progressBar = document.getElementById('progressBar');
+  progressBar.style.width = `${progressPercentage}%`;
+  progressBar.setAttribute('aria-valuenow', progressPercentage);
+  progressBar.textContent = `${progressPercentage}%`;
+
+  const questionsRemainingElement = document.getElementById('questionsRemaining');
+  questionsRemainingElement.textContent = `Questions remaining: ${remainingQuestions} out of ${totalQuestions}`;
+}
+
+async function getTotalQuestions() {
+  try {
+    const response = await fetch('/api/questions');
+    const data = await response.json();
+    let total = 0;
+    data.topics.forEach(topic => {
+      total += topic.questions.length;
+    });
+    return total;
+  } catch (error) {
+    console.error('Error fetching total questions:', error);
+    return 0;
+  }
+}
+
+async function getCompletedQuestions() {
+  try {
+    const response = await fetch('/api/transcriptions');
+    const transcriptions = await response.json();
+    return transcriptions.length;
+  } catch (error) {
+    console.error('Error fetching completed questions:', error);
+    return 0;
+  }
+}
 
 //loadQuestion(1);
 loadFirstUnansweredQuestion();
+updateProgressBar();
 
 // Initialize media recorder when the page loads
 initializeMediaRecorder().catch(console.error);
