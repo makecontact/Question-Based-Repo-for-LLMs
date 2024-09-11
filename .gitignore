@@ -3,3 +3,4 @@
 questions.json
 /audio_files/*
 /transcriptions/*
+.aider*
