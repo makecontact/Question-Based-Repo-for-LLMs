@@ -62,6 +62,7 @@ async function initializeMediaRecorder() {
       } finally {
           audioChunks = [];
           await updateAudioPlayer();
+          await updateProgressBar();
           recordBtn.disabled = false;
       }
   });
