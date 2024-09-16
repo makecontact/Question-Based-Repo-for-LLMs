@@ -1,6 +1,5 @@
 .env
 /node_modules/
-questions.json
-/audio_files/*
-/transcriptions/*
+/question_sets/*
 .aider*
+/backup/
