@@ -141,8 +141,13 @@ router.get('/first-unanswered/:setName', async (req, res) => {
   }
 });
 
-router.get('/download-all-transcriptions/:setName', async (req, res) => {
+router.post('/download-all-transcriptions/:setName', async (req, res) => {
   try {
+    const { description } = req.body;
+    if (!description) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+
     const transcriptionsDir = path.join(__dirname, '..', 'question_sets', req.params.setName, 'transcriptions');
     const files = await fs.readdir(transcriptionsDir);
     
@@ -165,9 +170,11 @@ router.get('/download-all-transcriptions/:setName', async (req, res) => {
       }
     }
 
+    const wrappedContent = `<repository description="${description}">\n${allTranscriptions}</repository>`;
+
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=${req.params.setName}_all_transcriptions.txt`);
-    res.send(allTranscriptions);
+    res.send(wrappedContent);
   } catch (error) {
     console.error('Error downloading all transcriptions:', error);
     res.status(500).json({ error: 'Failed to download all transcriptions' });

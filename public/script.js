@@ -268,10 +268,21 @@ nextBtn.addEventListener('click', () => {
 downloadAllBtn.addEventListener('click', async () => {
   if (!currentSetName) return;
   try {
-    const response = await fetch(`/api/download-all-transcriptions/${currentSetName}`);
+    const description = prompt("Enter a description of the repository's contents for the AI:");
+    if (!description) return;
+
+    const response = await fetch(`/api/download-all-transcriptions/${currentSetName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ description }),
+    });
+
     if (!response.ok) {
       throw new Error('Failed to download transcriptions');
     }
+
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
