@@ -210,8 +210,18 @@ router.post('/question-sets', async (req, res) => {
     await ensureDir(path.join(setPath, 'audio_files'));
     await ensureDir(path.join(setPath, 'transcriptions'));
 
-    // Create an empty questions.json file
-    await fs.writeFile(path.join(setPath, 'questions.json'), JSON.stringify({ topics: [] }));
+    // Create a questions.json file with an example topic and question
+    const exampleQuestions = {
+      topics: [
+        {
+          topic: "Example Topic",
+          questions: [
+            "This is an example question?"
+          ]
+        }
+      ]
+    };
+    await fs.writeFile(path.join(setPath, 'questions.json'), JSON.stringify(exampleQuestions, null, 2));
 
     res.json({ message: 'Question set created successfully' });
   } catch (error) {
