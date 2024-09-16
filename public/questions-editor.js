@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('setSelector').addEventListener('change', loadQuestions);
     document.getElementById('saveButton').addEventListener('click', saveQuestions);
     document.getElementById('createSetBtn').addEventListener('click', createNewSet);
+    document.getElementById('cloneSetBtn').addEventListener('click', cloneSet);
     document.getElementById('deleteSetBtn').addEventListener('click', deleteSet);
 });
 
@@ -50,6 +51,36 @@ async function loadQuestionSets() {
     } catch (error) {
         console.error('Error loading question sets:', error);
         alert('Failed to load question sets. Please try again.');
+    }
+}
+
+async function cloneSet() {
+    if (!currentSetName) {
+        alert('Please select a question set to clone.');
+        return;
+    }
+
+    const newSetName = prompt(`Enter a name for the cloned set of "${currentSetName}":`);
+    if (!newSetName) return;
+
+    try {
+        const response = await fetch(`/api/question-sets/${currentSetName}/clone`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ newSetName }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        alert('Question set cloned successfully!');
+        await loadQuestionSets();
+    } catch (error) {
+        console.error('Error cloning question set:', error);
+        alert('Failed to clone question set. Please try again.');
     }
 }
 

@@ -241,4 +241,19 @@ router.delete('/question-sets/:setName', async (req, res) => {
   }
 });
 
+router.post('/question-sets/:setName/clone', async (req, res) => {
+  try {
+    const { newSetName } = req.body;
+    if (!newSetName) {
+      return res.status(400).json({ error: 'New set name is required' });
+    }
+
+    await Question.cloneSet(req.params.setName, newSetName);
+    res.json({ message: 'Question set cloned successfully' });
+  } catch (error) {
+    console.error('Error cloning question set:', error);
+    res.status(500).json({ error: 'Failed to clone question set' });
+  }
+});
+
 module.exports = router;

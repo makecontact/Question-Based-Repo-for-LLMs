@@ -119,6 +119,23 @@ class Question {
     );
     return transcriptions.join('\n');
   }
+
+  static async cloneSet(sourceSetName, targetSetName) {
+    const sourceSetPath = this.getSetPath(sourceSetName);
+    const targetSetPath = this.getSetPath(targetSetName);
+
+    // Create the new set directory
+    await fs.mkdir(targetSetPath, { recursive: true });
+
+    // Create subdirectories
+    await fs.mkdir(path.join(targetSetPath, 'audio_files'), { recursive: true });
+    await fs.mkdir(path.join(targetSetPath, 'transcriptions'), { recursive: true });
+
+    // Copy questions.json
+    const questionsFilePath = path.join(sourceSetPath, 'questions.json');
+    const targetQuestionsFilePath = path.join(targetSetPath, 'questions.json');
+    await fs.copyFile(questionsFilePath, targetQuestionsFilePath);
+  }
 }
 
 module.exports = Question;
