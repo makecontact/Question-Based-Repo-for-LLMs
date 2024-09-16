@@ -64,7 +64,7 @@ class Question {
       console.error('Error finding first unanswered question:', error);
       return 1; // Return 1 as a default if there's an error
     }
-  }
+  } 
 
   static async getById(id) {
     const data = await fs.readFile(questionsFilePath, 'utf-8');
