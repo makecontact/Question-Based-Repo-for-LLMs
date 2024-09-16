@@ -1,4 +1,5 @@
 let editor;
+let currentSetName = '';
 
 document.addEventListener('DOMContentLoaded', async function() {
     const container = document.getElementById('editor');
@@ -32,22 +33,52 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     editor = new JSONEditor(container, options);
 
+    await loadQuestionSets();
+    document.getElementById('setSelector').addEventListener('change', loadQuestions);
+    document.getElementById('saveButton').addEventListener('click', saveQuestions);
+    document.getElementById('createSetBtn').addEventListener('click', createNewSet);
+    document.getElementById('deleteSetBtn').addEventListener('click', deleteSet);
+});
+
+async function loadQuestionSets() {
     try {
-        const response = await fetch('/api/questions');
+        const response = await fetch('/api/question-sets');
+        const sets = await response.json();
+        const setSelector = document.getElementById('setSelector');
+        setSelector.innerHTML = '<option value="">Select a question set</option>' +
+            sets.map(set => `<option value="${set}">${set}</option>`).join('');
+    } catch (error) {
+        console.error('Error loading question sets:', error);
+        alert('Failed to load question sets. Please try again.');
+    }
+}
+
+async function loadQuestions() {
+    currentSetName = document.getElementById('setSelector').value;
+    if (!currentSetName) {
+        editor.set({topics: []});
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/questions/${currentSetName}`);
         const questions = await response.json();
         editor.set(questions);
     } catch (error) {
         console.error('Error loading questions:', error);
         alert('Failed to load questions. Please try again.');
     }
-
-    document.getElementById('saveButton').addEventListener('click', saveQuestions);
-});
+}
 
 async function saveQuestions() {
+    if (!currentSetName) {
+        alert('Please select a question set first.');
+        return;
+    }
+
     try {
         const updatedQuestions = editor.get();
-        const response = await fetch('/api/questions', {
+        const response = await fetch(`/api/questions/${currentSetName}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -63,5 +94,59 @@ async function saveQuestions() {
     } catch (error) {
         console.error('Error saving questions:', error);
         alert('Failed to save questions. Please try again.');
+    }
+}
+
+async function createNewSet() {
+    const setName = prompt('Enter the name for the new question set:');
+    if (!setName) return;
+
+    try {
+        const response = await fetch('/api/question-sets', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ setName }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        alert('New question set created successfully!');
+        await loadQuestionSets();
+    } catch (error) {
+        console.error('Error creating new question set:', error);
+        alert('Failed to create new question set. Please try again.');
+    }
+}
+
+async function deleteSet() {
+    if (!currentSetName) {
+        alert('Please select a question set first.');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete the question set "${currentSetName}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/question-sets/${currentSetName}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        alert('Question set deleted successfully!');
+        currentSetName = '';
+        editor.set({topics: []});
+        await loadQuestionSets();
+    } catch (error) {
+        console.error('Error deleting question set:', error);
+        alert('Failed to delete question set. Please try again.');
     }
 }

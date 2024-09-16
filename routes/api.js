@@ -10,6 +10,15 @@ const Question = require('../models/question');
 const { transcribeAudio } = require('../utils/transcription');
 const { cleanTranscription } = require('../utils/transcriptionCleaner');
 
+// Helper function to create directory if it doesn't exist
+async function ensureDir(dirPath) {
+  try {
+    await fs.access(dirPath);
+  } catch (error) {
+    await fs.mkdir(dirPath, { recursive: true });
+  }
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const setPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'audio_files');
@@ -186,6 +195,39 @@ router.get('/transcriptions/:setName', async (req, res) => {
     res.json(transcriptions);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch transcriptions' });
+  }
+});
+
+router.post('/question-sets', async (req, res) => {
+  try {
+    const { setName } = req.body;
+    if (!setName) {
+      return res.status(400).json({ error: 'Set name is required' });
+    }
+
+    const setPath = path.join(__dirname, '..', 'question_sets', setName);
+    await ensureDir(setPath);
+    await ensureDir(path.join(setPath, 'audio_files'));
+    await ensureDir(path.join(setPath, 'transcriptions'));
+
+    // Create an empty questions.json file
+    await fs.writeFile(path.join(setPath, 'questions.json'), JSON.stringify({ topics: [] }));
+
+    res.json({ message: 'Question set created successfully' });
+  } catch (error) {
+    console.error('Error creating question set:', error);
+    res.status(500).json({ error: 'Failed to create question set' });
+  }
+});
+
+router.delete('/question-sets/:setName', async (req, res) => {
+  try {
+    const setPath = path.join(__dirname, '..', 'question_sets', req.params.setName);
+    await fs.rm(setPath, { recursive: true, force: true });
+    res.json({ message: 'Question set deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting question set:', error);
+    res.status(500).json({ error: 'Failed to delete question set' });
   }
 });
 

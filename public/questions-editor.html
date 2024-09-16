@@ -34,6 +34,17 @@
 
     <div class="container mt-5">
         <h1 class="mb-4">Questions Editor</h1>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <select id="setSelector" class="form-select">
+                    <option value="">Select a question set</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <button id="createSetBtn" class="btn btn-success me-2">Create New Set</button>
+                <button id="deleteSetBtn" class="btn btn-danger">Delete Set</button>
+            </div>
+        </div>
         <p>Use this editor to modify the questions structure. Each topic contains an array of questions.</p>
         <ul>
             <li>Click the + icon to add new topics or questions.</li>
