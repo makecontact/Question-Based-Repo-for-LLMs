@@ -149,8 +149,9 @@ async function loadQuestion(id) {
 }
 
 async function loadTranscription(id) {
+  if (!currentSetName) return;
   try {
-    const response = await fetch(`/api/transcription/${id}`);
+    const response = await fetch(`/api/transcription/${currentSetName}/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch transcription');
     }
