@@ -79,7 +79,10 @@ async function initializeMediaRecorder() {
       formData.append('audio', audioBlob, `${currentQuestionId}.wav`);
 
       try {
-          const response = await fetch(`/api/audio/${currentQuestionId}`, {
+          if (!currentSetName) {
+              throw new Error('No question set selected');
+          }
+          const response = await fetch(`/api/audio/${currentSetName}/${currentQuestionId}`, {
               method: 'POST',
               body: formData
           });
@@ -92,7 +95,7 @@ async function initializeMediaRecorder() {
           recordingStatus.textContent = 'Audio uploaded and processed successfully';
       } catch (error) {
           console.error('Error uploading audio:', error);
-          recordingStatus.textContent = 'Error uploading audio';
+          recordingStatus.textContent = 'Error uploading audio: ' + error.message;
       } finally {
           audioChunks = [];
           await updateAudioPlayer();
