@@ -29,12 +29,14 @@ async function loadQuestionSets() {
   }
 }
 
-setSelector.addEventListener('change', (event) => {
+setSelector.addEventListener('change', async (event) => {
   currentSetName = event.target.value;
   if (currentSetName) {
-    loadFirstUnansweredQuestion();
+    await loadFirstUnansweredQuestion();
+    await updateProgressBar();
   } else {
     resetUI();
+    resetProgressBar();
   }
 });
 
@@ -44,6 +46,7 @@ function resetUI() {
   audioContainer.innerHTML = '';
   transcriptionContainer.textContent = '';
   disableRecordingControls();
+  resetProgressBar();
 }
 
 async function initializeMediaRecorder() {
@@ -282,7 +285,10 @@ downloadAllBtn.addEventListener('click', async () => {
 });
 
 async function updateProgressBar() {
-  if (!currentSetName) return;
+  if (!currentSetName) {
+    resetProgressBar();
+    return;
+  }
   try {
     const totalQuestions = await getTotalQuestions();
     const completedQuestions = await getCompletedQuestions();
@@ -298,7 +304,18 @@ async function updateProgressBar() {
     questionsRemainingElement.textContent = `Questions remaining: ${remainingQuestions} out of ${totalQuestions}`;
   } catch (error) {
     console.error('Error updating progress bar:', error);
+    resetProgressBar();
   }
+}
+
+function resetProgressBar() {
+  const progressBar = document.getElementById('progressBar');
+  progressBar.style.width = '0%';
+  progressBar.setAttribute('aria-valuenow', 0);
+  progressBar.textContent = '';
+
+  const questionsRemainingElement = document.getElementById('questionsRemaining');
+  questionsRemainingElement.textContent = '';
 }
 
 async function getTotalQuestions() {
