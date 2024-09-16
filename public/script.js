@@ -1,4 +1,5 @@
 let currentQuestionId = 1;
+let currentSetName = '';
 let mediaRecorder;
 let audioChunks = [];
 let stream;
@@ -14,6 +15,36 @@ const downloadAllBtn = document.getElementById('downloadAllBtn');
 const audioContainer = document.getElementById('audioContainer');
 const transcriptionContainer = document.getElementById('transcriptionContainer');
 const recordingStatus = document.getElementById('recordingStatus');
+const setSelector = document.getElementById('setSelector');
+
+// Load available question sets
+async function loadQuestionSets() {
+  try {
+    const response = await fetch('/api/question-sets');
+    const sets = await response.json();
+    setSelector.innerHTML = '<option value="">Select a question set</option>' +
+      sets.map(set => `<option value="${set}">${set}</option>`).join('');
+  } catch (error) {
+    console.error('Error loading question sets:', error);
+  }
+}
+
+setSelector.addEventListener('change', (event) => {
+  currentSetName = event.target.value;
+  if (currentSetName) {
+    loadFirstUnansweredQuestion();
+  } else {
+    resetUI();
+  }
+});
+
+function resetUI() {
+  questionText.textContent = 'Please select a question set';
+  topicText.textContent = '';
+  audioContainer.innerHTML = '';
+  transcriptionContainer.textContent = '';
+  disableRecordingControls();
+}
 
 async function initializeMediaRecorder() {
   if (!stream) {
@@ -69,8 +100,12 @@ async function initializeMediaRecorder() {
 }
 
 async function loadFirstUnansweredQuestion() {
+  if (!currentSetName) {
+    resetUI();
+    return;
+  }
   try {
-    const response = await fetch('/api/first-unanswered');
+    const response = await fetch(`/api/first-unanswered/${currentSetName}`);
     const { id } = await response.json();
     await loadQuestion(id);
   } catch (error) {
@@ -90,8 +125,12 @@ function disableRecordingControls() {
 }
 
 async function loadQuestion(id) {
+  if (!currentSetName) {
+    resetUI();
+    return;
+  }
   try {
-    const response = await fetch(`/api/question/${id}`);
+    const response = await fetch(`/api/question/${currentSetName}/${id}`);
     if (!response.ok) {
       throw new Error('Question not found');
     }
@@ -124,13 +163,17 @@ async function loadTranscription(id) {
 }
 
 async function updateAudioPlayer() {
+  if (!currentSetName) {
+    resetUI();
+    return;
+  }
   try {
-    const audioResponse = await fetch(`/api/audio-details/${currentQuestionId}`);
+    const audioResponse = await fetch(`/api/audio-details/${currentSetName}/${currentQuestionId}`);
     const audioDetails = await audioResponse.json();
 
     if (audioDetails.exists) {
       console.log('Audio file details:', audioDetails);
-      const audioFile = `/audio_files/${currentQuestionId}.m4a`;
+      const audioFile = `/question_sets/${currentSetName}/audio_files/${currentQuestionId}.m4a`;
       audioContainer.innerHTML = `
         <audio controls src="${audioFile}">
           Your browser does not support the audio element.
@@ -148,7 +191,7 @@ async function updateAudioPlayer() {
     }
 
     // Load transcription
-    const transcriptionResponse = await fetch(`/api/transcription/${currentQuestionId}`);
+    const transcriptionResponse = await fetch(`/api/transcription/${currentSetName}/${currentQuestionId}`);
     if (transcriptionResponse.ok) {
       const { transcription } = await transcriptionResponse.json();
       transcriptionContainer.textContent = transcription || 'No transcription available.';
@@ -165,17 +208,18 @@ async function updateAudioPlayer() {
 }
 
 recordBtn.addEventListener('click', async () => {
+  if (!currentSetName) return;
   try {
     recordingStatus.textContent = 'Initializing...';
     recordBtn.disabled = true;
     
     // Check if there's an existing recording
-    const response = await fetch(`/api/audio-exists/${currentQuestionId}`);
+    const response = await fetch(`/api/audio-exists/${currentSetName}/${currentQuestionId}`);
     const { exists } = await response.json();
     
     if (exists) {
       // Delete the existing recording
-      await fetch(`/api/audio/${currentQuestionId}`, { method: 'DELETE' });
+      await fetch(`/api/audio/${currentSetName}/${currentQuestionId}`, { method: 'DELETE' });
       console.log('Existing recording deleted');
     }
 
@@ -199,7 +243,8 @@ stopBtn.addEventListener('click', () => {
 });
 
 deleteBtn.addEventListener('click', async () => {
-  await fetch(`/api/audio/${currentQuestionId}`, { method: 'DELETE' });
+  if (!currentSetName) return;
+  await fetch(`/api/audio/${currentSetName}/${currentQuestionId}`, { method: 'DELETE' });
   updateAudioPlayer();
 });
 
@@ -214,8 +259,9 @@ nextBtn.addEventListener('click', () => {
 });
 
 downloadAllBtn.addEventListener('click', async () => {
+  if (!currentSetName) return;
   try {
-    const response = await fetch('/api/download-all-transcriptions');
+    const response = await fetch(`/api/download-all-transcriptions/${currentSetName}`);
     if (!response.ok) {
       throw new Error('Failed to download transcriptions');
     }
@@ -224,7 +270,7 @@ downloadAllBtn.addEventListener('click', async () => {
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = 'all_transcriptions.txt';
+    a.download = `${currentSetName}_all_transcriptions.txt`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -235,6 +281,7 @@ downloadAllBtn.addEventListener('click', async () => {
 });
 
 async function updateProgressBar() {
+  if (!currentSetName) return;
   try {
     const totalQuestions = await getTotalQuestions();
     const completedQuestions = await getCompletedQuestions();
@@ -255,7 +302,7 @@ async function updateProgressBar() {
 
 async function getTotalQuestions() {
   try {
-    const response = await fetch('/api/questions');
+    const response = await fetch(`/api/questions/${currentSetName}`);
     const data = await response.json();
     return data.topics.reduce((total, topic) => total + topic.questions.length, 0);
   } catch (error) {
@@ -266,7 +313,7 @@ async function getTotalQuestions() {
 
 async function getCompletedQuestions() {
   try {
-    const response = await fetch('/api/transcriptions');
+    const response = await fetch(`/api/transcriptions/${currentSetName}`);
     const transcriptions = await response.text();
     return (transcriptions.match(/<topic>/g) || []).length;
   } catch (error) {
@@ -275,12 +322,11 @@ async function getCompletedQuestions() {
   }
 }
 
-//loadQuestion(1);
-loadFirstUnansweredQuestion();
-updateProgressBar();
+// Load question sets when the page loads
+loadQuestionSets();
 
 // Initialize media recorder when the page loads
 initializeMediaRecorder().catch(console.error);
 
 // Add event listener for page reload
-window.addEventListener('load', loadFirstUnansweredQuestion);
+window.addEventListener('load', loadQuestionSets);
