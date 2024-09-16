@@ -110,7 +110,7 @@ router.post('/audio/:setName/:id', upload.single('audio'), async (req, res) => {
     }
 
     // Convert WAV to M4A using FFmpeg
-    const ffmpegCommand = `ffmpeg -i ${tempWavPath} -ar 16000 -ac 1 -map 0:a: ${m4aPath}`;
+    const ffmpegCommand = `ffmpeg -i "${tempWavPath}" -ar 16000 -ac 1 -map 0:a: "${m4aPath}"`;
     await execPromise(ffmpegCommand);
 
     // Delete the temporary WAV file
