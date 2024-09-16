@@ -12,7 +12,8 @@ const { cleanTranscription } = require('../utils/transcriptionCleaner');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'audio_files/');
+    const setPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'audio_files');
+    cb(null, setPath);
   },
   filename: (req, file, cb) => {
     cb(null, `${req.params.id}_temp.wav`);
@@ -21,9 +22,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.get('/questions', async (req, res) => {
+router.get('/questions/:setName', async (req, res) => {
   try {
-    const questions = await Question.getAll();
+    const questions = await Question.getAll(req.params.setName);
     res.json(questions);
   } catch (error) {
     console.error('Error fetching questions:', error);
@@ -31,10 +32,9 @@ router.get('/questions', async (req, res) => {
   }
 });
 
-// Update questions
-router.post('/questions', async (req, res) => {
+router.post('/questions/:setName', async (req, res) => {
   try {
-    await Question.saveAll(req.body);
+    await Question.saveAll(req.params.setName, req.body);
     res.json({ message: 'Questions updated successfully' });
   } catch (error) {
     console.error('Error updating questions:', error);
@@ -42,17 +42,17 @@ router.post('/questions', async (req, res) => {
   }
 });
 
-router.get('/question/:id', async (req, res) => {
+router.get('/question/:setName/:id', async (req, res) => {
   try {
-    const question = await Question.getById(req.params.id);
+    const question = await Question.getById(req.params.setName, req.params.id);
     res.json(question);
   } catch (error) {
     res.status(404).json({ error: 'Question not found' });
   }
 });
 
-router.get('/audio-exists/:id', async (req, res) => {
-  const audioPath = path.join(__dirname, '..', 'audio_files', `${req.params.id}.m4a`);
+router.get('/audio-exists/:setName/:id', async (req, res) => {
+  const audioPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'audio_files', `${req.params.id}.m4a`);
   try {
     await fs.access(audioPath, fs.constants.F_OK);
     res.json({ exists: true });
@@ -61,8 +61,8 @@ router.get('/audio-exists/:id', async (req, res) => {
   }
 });
 
-router.get('/audio-details/:id', async (req, res) => {
-  const audioPath = path.join(__dirname, '..', 'audio_files', `${req.params.id}.m4a`);
+router.get('/audio-details/:setName/:id', async (req, res) => {
+  const audioPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'audio_files', `${req.params.id}.m4a`);
   try {
     const stats = await fs.stat(audioPath);
     res.json({
@@ -75,14 +75,9 @@ router.get('/audio-details/:id', async (req, res) => {
   }
 });
 
-router.delete('/audio/:id', async (req, res) => {
+router.delete('/audio/:setName/:id', async (req, res) => {
   try {
-    const audioPath = path.join(__dirname, '..', 'audio_files', `${req.params.id}.m4a`);
-    const transcriptionPath = path.join(__dirname, '..', 'transcriptions', `${req.params.id}.txt`);
-
-    await fs.unlink(audioPath).catch(() => {});
-    await fs.unlink(transcriptionPath).catch(() => {});
-
+    await Question.deleteAudioAndTranscription(req.params.setName, req.params.id);
     res.json({ message: 'Existing audio and transcription deleted successfully' });
   } catch (error) {
     console.error('Error deleting existing audio and transcription:', error);
@@ -90,13 +85,13 @@ router.delete('/audio/:id', async (req, res) => {
   }
 });
 
-router.post('/audio/:id', upload.single('audio'), async (req, res) => {
+router.post('/audio/:setName/:id', upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file uploaded' });
     }
     const tempWavPath = req.file.path;
-    const m4aPath = path.join('audio_files', `${req.params.id}.m4a`);
+    const m4aPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'audio_files', `${req.params.id}.m4a`);
 
     // Check if the file is empty
     const stats = await fs.stat(tempWavPath);
@@ -116,10 +111,10 @@ router.post('/audio/:id', upload.single('audio'), async (req, res) => {
     await fs.chmod(m4aPath, 0o644);
 
     const rawTranscription = await transcribeAudio(m4aPath);
-    const question = await Question.getById(req.params.id);
+    const question = await Question.getById(req.params.setName, req.params.id);
     const cleanedTranscription = await cleanTranscription(question.text, rawTranscription);
 
-    await Question.saveTranscription(req.params.id, cleanedTranscription);
+    await Question.saveTranscription(req.params.setName, req.params.id, cleanedTranscription);
     res.json({ message: 'Audio uploaded, converted, transcribed, and cleaned successfully' });
   } catch (error) {
     console.error('Error processing audio:', error);
@@ -127,9 +122,9 @@ router.post('/audio/:id', upload.single('audio'), async (req, res) => {
   }
 });
 
-router.get('/first-unanswered', async (req, res) => {
+router.get('/first-unanswered/:setName', async (req, res) => {
   try {
-    const firstUnansweredId = await Question.getFirstUnansweredId();
+    const firstUnansweredId = await Question.getFirstUnansweredId(req.params.setName);
     res.json({ id: firstUnansweredId });
   } catch (error) {
     console.error('Error finding first unanswered question:', error);
@@ -137,9 +132,9 @@ router.get('/first-unanswered', async (req, res) => {
   }
 });
 
-router.get('/download-all-transcriptions', async (req, res) => {
+router.get('/download-all-transcriptions/:setName', async (req, res) => {
   try {
-    const transcriptionsDir = path.join(__dirname, '..', 'transcriptions');
+    const transcriptionsDir = path.join(__dirname, '..', 'question_sets', req.params.setName, 'transcriptions');
     const files = await fs.readdir(transcriptionsDir);
     
     // Filter out .DS_Store and other hidden files
@@ -162,7 +157,7 @@ router.get('/download-all-transcriptions', async (req, res) => {
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=all_transcriptions.txt');
+    res.setHeader('Content-Disposition', `attachment; filename=${req.params.setName}_all_transcriptions.txt`);
     res.send(allTranscriptions);
   } catch (error) {
     console.error('Error downloading all transcriptions:', error);
@@ -170,9 +165,9 @@ router.get('/download-all-transcriptions', async (req, res) => {
   }
 });
 
-router.get('/transcription/:id', async (req, res) => {
+router.get('/transcription/:setName/:id', async (req, res) => {
   try {
-    const transcriptionPath = path.join(__dirname, '..', 'transcriptions', `${req.params.id}.txt`);
+    const transcriptionPath = path.join(__dirname, '..', 'question_sets', req.params.setName, 'transcriptions', `${req.params.id}.txt`);
     const transcription = await fs.readFile(transcriptionPath, 'utf-8');
     res.json({ transcription });
   } catch (error) {
@@ -185,18 +180,9 @@ router.get('/transcription/:id', async (req, res) => {
   }
 });
 
-router.delete('/audio/:id', async (req, res) => {
+router.get('/transcriptions/:setName', async (req, res) => {
   try {
-    await Question.deleteAudioAndTranscription(req.params.id);
-    res.json({ message: 'Audio and transcription deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete audio and transcription' });
-  }
-});
-
-router.get('/transcriptions', async (req, res) => {
-  try {
-    const transcriptions = await Question.getAllTranscriptions();
+    const transcriptions = await Question.getAllTranscriptions(req.params.setName);
     res.json(transcriptions);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch transcriptions' });

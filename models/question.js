@@ -1,8 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-const questionsFilePath = path.join(__dirname, '..', 'questions.json');
-
 const defaultQuestions = {
   topics: [
     {
@@ -16,15 +14,19 @@ const defaultQuestions = {
 };
 
 class Question {
+  static getSetPath(setName) {
+    return path.join(__dirname, '..', 'question_sets', setName);
+  }
 
-  static async getAll() {
+  static async getAll(setName) {
+    const questionsFilePath = path.join(this.getSetPath(setName), 'questions.json');
     try {
       const data = await fs.readFile(questionsFilePath, 'utf-8');
       return JSON.parse(data);
     } catch (error) {
       if (error.code === 'ENOENT') {
-        console.log('questions.json not found. Creating with default structure.');
-        await this.saveAll(defaultQuestions);
+        console.log(`questions.json not found for set ${setName}. Creating with default structure.`);
+        await this.saveAll(setName, defaultQuestions);
         return defaultQuestions;
       } else {
         console.error('Error reading questions file:', error);
@@ -33,7 +35,8 @@ class Question {
     }
   }
 
-  static async saveAll(questions) {
+  static async saveAll(setName, questions) {
+    const questionsFilePath = path.join(this.getSetPath(setName), 'questions.json');
     try {
       await fs.writeFile(questionsFilePath, JSON.stringify(questions, null, 2));
     } catch (error) {
@@ -42,14 +45,14 @@ class Question {
     }
   }
 
-  static async getFirstUnansweredId() {
+  static async getFirstUnansweredId(setName) {
     try {
-      const questions = await this.getAll(); // This will create the file if it doesn't exist
+      const questions = await this.getAll(setName);
       let questionIndex = 0;
       for (const topic of questions.topics) {
         for (const question of topic.questions) {
           questionIndex++;
-          const audioPath = path.join(__dirname, '..', 'audio_files', `${questionIndex}.m4a`);
+          const audioPath = path.join(this.getSetPath(setName), 'audio_files', `${questionIndex}.m4a`);
           try {
             await fs.access(audioPath, fs.constants.F_OK);
           } catch (error) {
@@ -66,8 +69,8 @@ class Question {
     }
   } 
 
-  static async getById(id) {
-    const data = await fs.readFile(questionsFilePath, 'utf-8');
+  static async getById(setName, id) {
+    const data = await fs.readFile(path.join(this.getSetPath(setName), 'questions.json'), 'utf-8');
     const topics = JSON.parse(data).topics;
     
     let questionIndex = 0;
@@ -86,31 +89,31 @@ class Question {
     throw new Error('Question not found');
   }
 
-  static async saveTranscription(id, transcription) {
-    const question = await this.getById(id);
+  static async saveTranscription(setName, id, transcription) {
+    const question = await this.getById(setName, id);
     const transcriptionContent = `<topic><question>${question.text}</question><answer>${transcription}</answer></topic>`;
-    await fs.writeFile(path.join(__dirname, '..', 'transcriptions', `${id}.txt`), transcriptionContent);
+    await fs.writeFile(path.join(this.getSetPath(setName), 'transcriptions', `${id}.txt`), transcriptionContent);
   }
 
-  static async deleteAudioAndTranscription(id) {
+  static async deleteAudioAndTranscription(setName, id) {
     try {
-      await fs.unlink(path.join(__dirname, '..', 'audio_files', `${id}.m4a`));
+      await fs.unlink(path.join(this.getSetPath(setName), 'audio_files', `${id}.m4a`));
     } catch (error) {
       console.error('Failed to delete audio file:', error);
     }
 
     try {
-      await fs.unlink(path.join(__dirname, '..', 'transcriptions', `${id}.txt`));
+      await fs.unlink(path.join(this.getSetPath(setName), 'transcriptions', `${id}.txt`));
     } catch (error) {
       console.error('Failed to delete transcription file:', error);
     }
   }
 
-  static async getAllTranscriptions() {
-    const transcriptionFiles = await fs.readdir(path.join(__dirname, '..', 'transcriptions'));
+  static async getAllTranscriptions(setName) {
+    const transcriptionFiles = await fs.readdir(path.join(this.getSetPath(setName), 'transcriptions'));
     const transcriptions = await Promise.all(
       transcriptionFiles.map(async (file) => {
-        const content = await fs.readFile(path.join(__dirname, '..', 'transcriptions', file), 'utf-8');
+        const content = await fs.readFile(path.join(this.getSetPath(setName), 'transcriptions', file), 'utf-8');
         return content;
       })
     );
